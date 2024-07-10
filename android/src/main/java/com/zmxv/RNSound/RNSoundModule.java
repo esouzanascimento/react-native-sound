@@ -19,6 +19,10 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.modules.core.ExceptionsManagerModule;
 
+import android.media.AudioFormat;
+import android.media.AudioTrack;
+import com.facebook.react.bridge.ReadableArray;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
