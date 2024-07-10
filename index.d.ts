@@ -199,13 +199,13 @@ declare class Sound {
   isPlaying(): boolean
 
    /**
-   * Plays audio data from a buffer
-   * @param buffer - Array of audio data
-   * @param sampleRate - Sample rate of the audio data
-   * @param channels - Number of channels of the audio data
-   * @param bitsPerSample - Bits per sample of the audio data
+   * Plays audio from a buffer
+   * @param buffer - Array of numbers representing the audio data
+   * @param sampleRate - Sample rate of the audio
+   * @param channels - Number of audio channels
+   * @param bitsPerSample - Number of bits per sample
    */
-   static playFromBuffer(buffer: number[], sampleRate: number, channels: number, bitsPerSample: number): void
+  static playFromBuffer(buffer: number[], sampleRate: number, channels: number, bitsPerSample: number): Promise<void>;
 
 }
 

@@ -22,6 +22,7 @@ import com.facebook.react.modules.core.ExceptionsManagerModule;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.Promise;
 
 import java.io.File;
 import java.util.HashMap;
@@ -226,27 +227,44 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
   }
 
   @ReactMethod
-  public void playFromBuffer(ReadableArray buffer, int sampleRate, int channels, int bitsPerSample) {
-      byte[] audioData = new byte[buffer.size()];
-      for (int i = 0; i < buffer.size(); i++) {
-          audioData[i] = (byte) buffer.getInt(i);
-      }
+public void playFromBuffer(ReadableArray buffer, int sampleRate, int channels, int bitsPerSample, Promise promise) {
+    try {
+        int bufferSize = buffer.size();
+        byte[] audioData = new byte[bufferSize];
+        for (int i = 0; i < bufferSize; i++) {
+            audioData[i] = (byte) buffer.getInt(i);
+        }
 
-      try {
-          AudioTrack audioTrack = new AudioTrack(
-              AudioManager.STREAM_MUSIC,
-              sampleRate,
-              (channels == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO,
-              (bitsPerSample == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
-              audioData.length,
-              AudioTrack.MODE_STATIC
-          );
-          audioTrack.write(audioData, 0, audioData.length);
-          audioTrack.play();
-      } catch (Exception e) {
-          e.printStackTrace();
-      }
-  }
+        AudioTrack audioTrack = new AudioTrack(
+            AudioManager.STREAM_MUSIC,
+            sampleRate,
+            (channels == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO,
+            (bitsPerSample == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
+            bufferSize,
+            AudioTrack.MODE_STATIC
+        );
+
+        audioTrack.write(audioData, 0, bufferSize);
+        audioTrack.play();
+
+        audioTrack.setPlaybackPositionUpdateListener(new AudioTrack.OnPlaybackPositionUpdateListener() {
+            @Override
+            public void onMarkerReached(AudioTrack track) {
+                promise.resolve(true);
+                track.release();
+            }
+
+            @Override
+            public void onPeriodicNotification(AudioTrack track) {
+                // No-op
+            }
+        });
+
+        audioTrack.setNotificationMarkerPosition(bufferSize / channels / (bitsPerSample / 8));
+    } catch (Exception e) {
+        promise.reject("PlaybackError", e);
+    }
+}
 
   @ReactMethod
   public void play(final Double key, final Callback callback) {

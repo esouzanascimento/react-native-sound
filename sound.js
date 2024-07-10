@@ -326,8 +326,17 @@ Sound.setSpeakerPhone = function(value) {
 }
 
 Sound.playFromBuffer = function(buffer, sampleRate, channels, bitsPerSample) {
-  RNSound.playFromBuffer(buffer, sampleRate, channels, bitsPerSample);
+  return new Promise((resolve, reject) => {
+    RNSound.playFromBuffer(buffer, sampleRate, channels, bitsPerSample, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  });
 };
+
 
 Sound.MAIN_BUNDLE = RNSound.MainBundlePath;
 Sound.DOCUMENT = RNSound.NSDocumentDirectory;

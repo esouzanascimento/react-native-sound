@@ -3,12 +3,17 @@
 #import <React/RCTConvert.h>
 #import <React/RCTEventDispatcher.h>
 #import <AVFoundation/AVFoundation.h>
+#import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
 
 #if __has_include("RCTUtils.h")
 #import "RCTUtils.h"
 #else
 #import <React/RCTUtils.h>
 #endif
+
+@interface RNSound : RCTEventEmitter <RCTBridgeModule>
+@end
 
 @implementation RNSound {
     NSMutableDictionary *_playerPool;
@@ -113,26 +118,41 @@ RCT_EXPORT_MODULE();
 }
 
 // Add this method in RNSound.m
-RCT_EXPORT_METHOD(playFromBuffer:(NSArray *)buffer sampleRate:(NSInteger)sampleRate channels:(NSInteger)channels bitsPerSample:(NSInteger)bitsPerSample) {
-    NSUInteger length = [buffer count];
-    int16_t *audioData = (int16_t *)malloc(length * sizeof(int16_t));
-    for (NSUInteger i = 0; i < length; i++) {
-        audioData[i] = [[buffer objectAtIndex:i] intValue];
+RCT_EXPORT_METHOD(playFromBuffer:(NSArray *)buffer
+                  sampleRate:(nonnull NSNumber *)sampleRate
+                  channels:(nonnull NSNumber *)channels
+                  bitsPerSample:(nonnull NSNumber *)bitsPerSample
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
+    @try {
+        NSUInteger bufferSize = [buffer count];
+        int8_t *audioData = malloc(bufferSize);
+        for (NSUInteger i = 0; i < bufferSize; i++) {
+            audioData[i] = [buffer[i] intValue];
+        }
+
+        AVAudioFormat *audioFormat = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatInt16 sampleRate:[sampleRate doubleValue] channels:[channels unsignedIntegerValue] interleaved:YES];
+
+        AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:(AVAudioFrameCount)(bufferSize / audioFormat.streamDescription->mBytesPerFrame)];
+        pcmBuffer.frameLength = pcmBuffer.frameCapacity;
+        memcpy(pcmBuffer.int16ChannelData[0], audioData, bufferSize);
+
+        AVAudioPlayerNode *playerNode = [[AVAudioPlayerNode alloc] init];
+        AVAudioEngine *engine = [[AVAudioEngine alloc] init];
+        [engine attachNode:playerNode];
+        [engine connect:playerNode to:[engine mainMixerNode] format:audioFormat];
+        [engine startAndReturnError:nil];
+
+        [playerNode scheduleBuffer:pcmBuffer completionHandler:^{
+            resolve(@(YES));
+        }];
+        [playerNode play];
+        
+        free(audioData);
     }
-
-    NSError *error;
-    AVAudioFormat *format = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatInt16 sampleRate:sampleRate channels:channels interleaved:YES];
-    AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format frameCapacity:length];
-    pcmBuffer.frameLength = pcmBuffer.frameCapacity;
-    memcpy(pcmBuffer.int16ChannelData[0], audioData, length * sizeof(int16_t));
-
-    AVAudioPlayerNode *playerNode = [[AVAudioPlayerNode alloc] init];
-    [self.audioEngine attachNode:playerNode];
-    [self.audioEngine connect:playerNode to:self.audioEngine.mainMixerNode format:format];
-    [playerNode scheduleBuffer:pcmBuffer completionHandler:nil];
-    [playerNode play];
-    
-    free(audioData);
+    @catch (NSException *exception) {
+        reject(@"PlaybackError", @"Error playing audio buffer", nil);
+    }
 }
 
 RCT_EXPORT_METHOD(enable : (BOOL)enabled) {
