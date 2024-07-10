@@ -1,10 +1,10 @@
 {
-  "name": "react-native-sound",
+  "name": "react-native-play",
   "version": "0.11.2",
   "description": "React Native module for playing sound clips on iOS, Android, and Windows",
   "main": "sound.js",
   "typings": "index.d.ts",
-  "repository": "zmxv/react-native-sound",
+  "repository": "esouzanascimento/react-native-sound",
   "keywords": [
     "react-native",
     "sound",
