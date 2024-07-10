@@ -108,6 +108,29 @@ RCT_EXPORT_MODULE();
                                      @"NSCachesDirectory", nil];
 }
 
+// Add this method in RNSound.m
+RCT_EXPORT_METHOD(playFromBuffer:(NSArray *)buffer sampleRate:(NSInteger)sampleRate channels:(NSInteger)channels bitsPerSample:(NSInteger)bitsPerSample) {
+    NSUInteger length = [buffer count];
+    int16_t *audioData = (int16_t *)malloc(length * sizeof(int16_t));
+    for (NSUInteger i = 0; i < length; i++) {
+        audioData[i] = [[buffer objectAtIndex:i] intValue];
+    }
+
+    NSError *error;
+    AVAudioFormat *format = [[AVAudioFormat alloc] initWithCommonFormat:AVAudioPCMFormatInt16 sampleRate:sampleRate channels:channels interleaved:YES];
+    AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format frameCapacity:length];
+    pcmBuffer.frameLength = pcmBuffer.frameCapacity;
+    memcpy(pcmBuffer.int16ChannelData[0], audioData, length * sizeof(int16_t));
+
+    AVAudioPlayerNode *playerNode = [[AVAudioPlayerNode alloc] init];
+    [self.audioEngine attachNode:playerNode];
+    [self.audioEngine connect:playerNode to:self.audioEngine.mainMixerNode format:format];
+    [playerNode scheduleBuffer:pcmBuffer completionHandler:nil];
+    [playerNode play];
+    
+    free(audioData);
+}
+
 RCT_EXPORT_METHOD(enable : (BOOL)enabled) {
     AVAudioSession *session = [AVAudioSession sharedInstance];
     [session setCategory:AVAudioSessionCategoryAmbient error:nil];

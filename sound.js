@@ -325,6 +325,10 @@ Sound.setSpeakerPhone = function(value) {
   }
 }
 
+Sound.playFromBuffer = function(buffer, sampleRate, channels, bitsPerSample) {
+  RNSound.playFromBuffer(buffer, sampleRate, channels, bitsPerSample);
+};
+
 Sound.MAIN_BUNDLE = RNSound.MainBundlePath;
 Sound.DOCUMENT = RNSound.NSDocumentDirectory;
 Sound.LIBRARY = RNSound.NSLibraryDirectory;

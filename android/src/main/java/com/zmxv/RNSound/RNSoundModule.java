@@ -222,6 +222,29 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
   }
 
   @ReactMethod
+  public void playFromBuffer(ReadableArray buffer, int sampleRate, int channels, int bitsPerSample) {
+      byte[] audioData = new byte[buffer.size()];
+      for (int i = 0; i < buffer.size(); i++) {
+          audioData[i] = (byte) buffer.getInt(i);
+      }
+
+      try {
+          AudioTrack audioTrack = new AudioTrack(
+              AudioManager.STREAM_MUSIC,
+              sampleRate,
+              (channels == 1) ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO,
+              (bitsPerSample == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
+              audioData.length,
+              AudioTrack.MODE_STATIC
+          );
+          audioTrack.write(audioData, 0, audioData.length);
+          audioTrack.play();
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+  }
+
+  @ReactMethod
   public void play(final Double key, final Callback callback) {
     MediaPlayer player = this.playerPool.get(key);
     if (player == null) {

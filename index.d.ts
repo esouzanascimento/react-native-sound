@@ -197,6 +197,16 @@ declare class Sound {
    * Whether the player is playing or not.
    */
   isPlaying(): boolean
+
+   /**
+   * Plays audio data from a buffer
+   * @param buffer - Array of audio data
+   * @param sampleRate - Sample rate of the audio data
+   * @param channels - Number of channels of the audio data
+   * @param bitsPerSample - Bits per sample of the audio data
+   */
+   static playFromBuffer(buffer: number[], sampleRate: number, channels: number, bitsPerSample: number): void
+
 }
 
 export = Sound;
